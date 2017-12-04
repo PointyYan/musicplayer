@@ -8,14 +8,16 @@ package playlist;
 import java.util.*;
 import java.io.File;
 import javax.swing.JList;
-import ui.MainView;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+//import ui.MainView;
 
 
 /**
  *
  * @author yjq97
  */
-public class PlayList {
+public class PlayList extends JList<Object>{
     
     // 保存所有音乐文件
 	private ArrayList<File> allFile = new ArrayList<File>();
@@ -24,9 +26,13 @@ public class PlayList {
         // 记录列表选择的位置 与上面两个list对应
 	private int chooseIndex;
         
+        public JList<String> musicList;
         
         
-        public void init(){
+
+        
+        public void initList(){
+            
             musicName.clear();
             allFile.clear();
             File f = new File("Music");

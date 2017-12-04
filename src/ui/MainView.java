@@ -5,7 +5,15 @@
  */
 package ui;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileFilter;
+import java.util.ArrayList;
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import playlist.PlayList;
 
 /**
@@ -14,6 +22,13 @@ import playlist.PlayList;
  */
 public class MainView extends JFrame {
 
+    // 保存所有音乐文件
+    private ArrayList<File> allFile = new ArrayList<File>();
+    // 保存名称
+    private ArrayList<String> musicName = new ArrayList<String>();
+    // 记录列表选择的位置 与上面两个list对应
+    private int chooseIndex;
+    
     /**
      * Creates new form MainView
      */
@@ -30,8 +45,6 @@ public class MainView extends JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jList = new javax.swing.JList<>();
         jScrollPane2 = new javax.swing.JScrollPane();
         jT = new javax.swing.JTextPane();
         restart = new javax.swing.JButton();
@@ -46,18 +59,14 @@ public class MainView extends JFrame {
         jsVolume = new javax.swing.JSlider();
         jlLeft = new javax.swing.JLabel();
         jlRight = new javax.swing.JLabel();
+        jpList = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jList = new javax.swing.JList<>();
         get = new javax.swing.JButton();
         delete = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
-
-        jList.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
-        jScrollPane1.setViewportView(jList);
 
         jScrollPane2.setViewportView(jT);
 
@@ -92,11 +101,6 @@ public class MainView extends JFrame {
 
         volumeOOO.setText("V");
         volumeOOO.setActionCommand("btnvoluem");
-        volumeOOO.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                volumeOOOActionPerformed(evt);
-            }
-        });
 
         jlLeft.setBackground(new java.awt.Color(204, 255, 255));
         jlLeft.setText("3");
@@ -106,9 +110,95 @@ public class MainView extends JFrame {
         jlRight.setText("4");
         jlRight.setOpaque(true);
 
+        jList.setModel(new javax.swing.AbstractListModel<String>() {
+            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+            public int getSize() { return strings.length; }
+            public String getElementAt(int i) { return strings[i]; }
+        });
+        initList();
+        jList = new JList<String>(musicName.toArray(new String[] {}));
+        jList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                chooseIndex = jList.getSelectedIndex();
+                delete.setEnabled(true);
+
+            }
+        });
+        jScrollPane1.setViewportView(jList);
+
         get.setText("添加歌曲");
+        get.addActionListener((ActionEvent e) -> {
+            Object obj = e.getSource();
+            if(obj==get){
+                JFileChooser chooser = new JFileChooser();
+                //设置选择器 只能选择具体的类型(这里是mp3 和 wav)
+                myFileFilter filter = new myFileFilter();
+                chooser.addChoosableFileFilter(filter);
+                chooser.setFileFilter(filter);
+                chooser.showDialog(new JLabel(), "选择");
+                //得到选择的文件
+                File f = chooser.getSelectedFile();
+                if (f == null)
+                return;
+                String endPath = new File("Music").getAbsolutePath() + "/" + f.getName();
+                //将这个文件移动到music文件夹下
+                f.renameTo(new File(endPath));
+                //更新集合
+                initList();
+                jList.removeAll();
+                //更新jlist选择的元素
+                ListModel<String> model = new DefaultComboBoxModel(musicName.toArray(new String[] {}));
+                jList.setModel(model);
+            }
+        });
 
         delete.setText("删除歌曲");
+        delete.addActionListener((ActionEvent e) -> {
+            Object obj = e.getSource();
+            //如果点击删除按钮
+            if (obj == delete) {
+                //根据选择的下标得到文件
+                File f = allFile.get(chooseIndex);
+                //删除文件夹里的文件
+                f.delete();
+                //从集合中删除
+                allFile.remove(chooseIndex);
+                musicName.remove(chooseIndex);
+                //更新jlist显示的东西
+                jList.removeAll();
+                ListModel<String> model = new DefaultComboBoxModel(musicName.toArray(new String[] {}));
+                jList.setModel(model);
+                //设置删除按钮不可选中(只有你选择了具体的音乐之后才可选)
+                delete.setEnabled(false);
+            }
+        });
+
+        javax.swing.GroupLayout jpListLayout = new javax.swing.GroupLayout(jpList);
+        jpList.setLayout(jpListLayout);
+        jpListLayout.setHorizontalGroup(
+            jpListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jpListLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jpListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jpListLayout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(jpListLayout.createSequentialGroup()
+                        .addComponent(get)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(delete)))
+                .addContainerGap())
+        );
+        jpListLayout.setVerticalGroup(
+            jpListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jpListLayout.createSequentialGroup()
+                .addGroup(jpListLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(get)
+                    .addComponent(delete))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 368, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -127,11 +217,7 @@ public class MainView extends JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 570, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(get)
-                            .addComponent(delete))
+                        .addComponent(jpList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addComponent(pricture, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -157,13 +243,8 @@ public class MainView extends JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(jScrollPane2)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 404, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(get)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(delete)))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 404, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jpList, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(Volume, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -187,10 +268,6 @@ public class MainView extends JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void volumeOOOActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_volumeOOOActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_volumeOOOActionPerformed
 
     private void VolumeMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_VolumeMousePressed
         // TODO add your handling code here:
@@ -223,7 +300,7 @@ public class MainView extends JFrame {
             java.util.logging.Logger.getLogger(MainView.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-
+        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -231,7 +308,46 @@ public class MainView extends JFrame {
             }
         });
     }
+    
+    public void initList(){//在main函数中重建线程实现
+            
+            musicName.clear();
+            allFile.clear();
+            File f = new File("Music");
+            //如果这个文件夹不存在就创建文件夹
+            if (!f.exists()) {
+			f.mkdirs();
+		} else {
+			//得到文件夹里的所有文件
+			File fa[] = f.listFiles();
+			for (int i = 0; i < fa.length; i++) {
+				File fs = fa[i];
+				if (!fs.isDirectory()) {
+					//得到文件名和文件类型后缀
+					String name = fs.getName().substring(0, fs.getName().indexOf("."));
+					String type = fs.getName().substring(fs.getName().indexOf(".") + 1);
+					if (type.toLowerCase().equals("mp3") || type.toLowerCase().equals("wav")) {
+						musicName.add(name);
+						allFile.add(fs);
+					}
+				}
+			}
 
+		}
+        }
+
+    class myFileFilter extends javax.swing.filechooser.FileFilter{
+		public String getDescription() {
+			return "*.mp3;*.wav";
+		}
+
+		public boolean accept(File file) {
+			String name = file.getName();
+			return file.isDirectory() || name.toLowerCase().endsWith(".mp3") || name.toLowerCase().endsWith(".wav");
+		}
+	}
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JSlider Volume;
     private javax.swing.JButton delete;
@@ -243,6 +359,7 @@ public class MainView extends JFrame {
     private javax.swing.JTextPane jT;
     private javax.swing.JLabel jlLeft;
     private javax.swing.JLabel jlRight;
+    private javax.swing.JPanel jpList;
     private javax.swing.JSlider jsVolume;
     private javax.swing.JButton next;
     private javax.swing.JButton pre;
