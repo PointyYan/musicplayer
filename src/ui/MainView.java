@@ -1,26 +1,42 @@
 /*
  * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
+ * To change this template file, choose Tools | Temp    @Override
+    public void actionPerformed(ActionEvent e) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+lates
  * and open the template in the editor.
  */
 package ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.sound.midi.*;
+import javax.sound.sampled.*;
+import javax.media.*;
 
-import playlist.PlayList;
+
 
 /**
  *
  * @author yjq97
  */
-public class MainView extends JFrame {
+public class MainView extends JFrame implements ActionListener, ControllerListener {
 
     // 保存所有音乐文件
     private ArrayList<File> allFile = new ArrayList<File>();
@@ -28,6 +44,22 @@ public class MainView extends JFrame {
     private ArrayList<String> musicName = new ArrayList<String>();
     // 记录列表选择的位置 与上面两个list对应
     private int chooseIndex;
+    private int index;
+    private URL url;
+    String flag;
+    String tt;
+    // Length and position of the sound are measured in milliseconds for
+    // sampled sounds and MIDI "ticks" for MIDI sounds
+    int audioLength; // Length of the sound.
+    int audioPosition = 0; // Current position within the sound
+    // 播放
+    Player player = null;
+    MusicFileChooser fileChooser = new MusicFileChooser();
+   
+    static int newtime = 0;
+    int ischanging = 0; //当鼠标是对游标进行点击，进度值也会改变
+    int ispressing = 0; //判断鼠标是否对游标进行点击
+    int countSecond; //获取音乐的总时间值
     
     /**
      * Creates new form MainView
@@ -45,11 +77,9 @@ public class MainView extends JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jT = new javax.swing.JTextPane();
         restart = new javax.swing.JButton();
         pre = new javax.swing.JButton();
-        Volume = new javax.swing.JSlider();
+        progress = new javax.swing.JSlider();
         information = new javax.swing.JLabel();
         pricture = new javax.swing.JLabel();
         start = new javax.swing.JButton();
@@ -64,23 +94,44 @@ public class MainView extends JFrame {
         jList = new javax.swing.JList<>();
         get = new javax.swing.JButton();
         delete = new javax.swing.JButton();
+        jPanel1 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
 
-        jScrollPane2.setViewportView(jT);
-
-        restart.setText("restart");
-        restart.setActionCommand("btnrestart");
+        restart.setText("播放");
 
         pre.setText("上一首");
-        pre.setActionCommand("btnpre");
+        pre.setActionCommand("pre");
 
-        Volume.addMouseListener(new java.awt.event.MouseAdapter() {
+        progress.setValue(0);
+        progress.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
-                VolumeMousePressed(evt);
+                progressMousePressed(evt);
             }
         });
+        progress.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent arg0){
+                ispressing = 1;
+            }
+            public void mouseReleased(MouseEvent arg0){
+                ispressing = 0;
+            }
+        });
+        if(player != null) {
+            if(ispressing == 0) {
+                if(ischanging == 1) {
+                    newtime = progress.getValue();
+                    player.setMediaTime(new Time(((long)newtime)*1000000000));
+                    ischanging = 0;
+                } else {
+                    newtime = (int)player.getMediaTime().getSeconds();
+                    progress.setValue(newtime);
+                    jlLeft.setText(newtime/60+":"+newtime%60);
+                    jlRight.setText(countSecond/60+":"+countSecond%60);
+                }
+            }
+        }
 
         information.setBackground(new java.awt.Color(0, 255, 255));
         information.setText("jLabel1");
@@ -91,23 +142,34 @@ public class MainView extends JFrame {
         pricture.setOpaque(true);
 
         start.setText("开始");
-        start.setActionCommand("btnopen");
+        start.setActionCommand("start");
+        start.addActionListener(this);
 
         stop.setText("暂停");
-        stop.setActionCommand("btnstop");
+        stop.setActionCommand("stop");
 
         next.setText("下一首");
-        next.setActionCommand("btnnext");
+        next.setActionCommand("next");
 
         volumeOOO.setText("V");
         volumeOOO.setActionCommand("btnvoluem");
 
+        jsVolume.setValue(30);
+        jsVolume.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent event){
+                jsVolume.setValue(jsVolume.getValue());
+            }
+        });
+
         jlLeft.setBackground(new java.awt.Color(204, 255, 255));
-        jlLeft.setText("3");
+        jlLeft.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlLeft.setText("00:00");
+        jlLeft.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jlLeft.setOpaque(true);
 
         jlRight.setBackground(new java.awt.Color(204, 0, 102));
-        jlRight.setText("4");
+        jlRight.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlRight.setText("00:00");
         jlRight.setOpaque(true);
 
         jList.setModel(new javax.swing.AbstractListModel<String>() {
@@ -121,7 +183,6 @@ public class MainView extends JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 chooseIndex = jList.getSelectedIndex();
                 delete.setEnabled(true);
-
             }
         });
         jScrollPane1.setViewportView(jList);
@@ -200,26 +261,32 @@ public class MainView extends JFrame {
                 .addContainerGap())
         );
 
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 574, Short.MAX_VALUE)
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 395, Short.MAX_VALUE)
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(jlLeft, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(Volume, javax.swing.GroupLayout.PREFERRED_SIZE, 784, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(progress, javax.swing.GroupLayout.PREFERRED_SIZE, 784, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jlRight, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(8, 8, 8))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 570, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jpList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                    .addGroup(layout.createSequentialGroup()
                         .addComponent(pricture, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(information, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -236,18 +303,23 @@ public class MainView extends JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(volumeOOO)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jsVolume, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addComponent(jsVolume, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jpList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 404, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jpList, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jpList, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(Volume, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(progress, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jlLeft, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jlRight, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -263,16 +335,16 @@ public class MainView extends JFrame {
                         .addComponent(stop)
                         .addComponent(next)
                         .addComponent(volumeOOO)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void VolumeMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_VolumeMousePressed
+    private void progressMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_progressMousePressed
         // TODO add your handling code here:
         
-    }//GEN-LAST:event_VolumeMousePressed
+    }//GEN-LAST:event_progressMousePressed
 
     /**
      * @param args the command line arguments
@@ -307,8 +379,15 @@ public class MainView extends JFrame {
                 new MainView().setVisible(true);
             }
         });
+//        lrcreader lr=new lrcreader("d:\\1258.lrc");
+        
     }
     
+    
+    
+    /**
+     * 从文件夹获取所有已存在的音乐文件
+     */
     public void initList(){//在main函数中重建线程实现
             
             musicName.clear();
@@ -336,6 +415,115 @@ public class MainView extends JFrame {
 		}
         }
 
+    @Override
+    public void actionPerformed(ActionEvent e) {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+          String cmd = e.getActionCommand();
+          if(e.getSource()==start){
+              index = chooseIndex;
+              if(index>=0){
+                  try {
+                      jList.setSelectedIndex(index);
+                      flag = (String)jList.getSelectedValue();
+                      tt =flag;                      
+//                      if(file.exists()){    
+//                         MediaLocator  locator=new MediaLocator("file:///D:/a.mp3"/*+file.getAbsolutePath()*/);    
+//                         System.out.println("file:///D:/a.mp3"/*+file.getAbsolutePath()*/);
+////                           player = Manager.createRealizedPlayer(locator);   
+//                            player = Manager.createPlayer(locator);
+//                           player.prefetch();// 预读文件    
+//                    }else{    
+//                         System.err.println(file+"  找不到");    
+//                    }                      
+//                      file = new File(url); 
+                      url = new URL("file:"+"/Music/"+flag+".mp3");
+                      String s = "/Music/"+flag+".mp3";
+                      File file = new File(s);
+//                      file = new File(url);
+                      MediaLocator locator = new MediaLocator(url);
+                      player = Manager.createPlayer(locator);
+                      player.prefetch();
+                      player.start();
+                  }catch(Exception ee){
+                      System.out.println("shibai");
+                      System.out.println(url);
+                  }
+              }
+          }
+          if(e.getSource()==stop){
+              if(player!=null){
+                  player.stop();
+              }
+          }
+          if(e.getSource()==restart){
+              if(player!=null){
+                player.stop();
+                progress.setValue(0);
+                jlLeft.setText("00:00");
+                jlRight.setText("00:00");
+                player.setMediaTime(new Time(0)); //设置时间为零
+                player.start();
+              }else{
+                  System.out.println("重新播放失败!");
+              }
+          }
+          if(e.getSource()==pre){
+              if (player!=null) {
+                  player.stop();
+                  index = chooseIndex;
+                  if(index>=1 ){
+                      try{
+                      if(--index>=0)
+                      {
+                      jList.setSelectedIndex(index);
+                      flag = (String)jList.getSelectedValue();
+                      tt =flag;
+                      url = new URL("file:"+"/Music/"+flag+".mp3");
+                      String s = "/Music/"+flag+".mp3";
+                      File file = new File(s);
+//                      file = new File(url);
+                      MediaLocator locator = new MediaLocator(url);
+                      player = Manager.createPlayer(locator);
+                      player.prefetch();
+                      player.start();
+                      }
+                      }catch(Exception eee){
+                          System.out.println("上一首播放失败！");
+                      }
+                  }
+              }
+          }
+          if (e.getSource()==next) {
+             if (player!=null) {
+                  player.stop();
+                  index = chooseIndex;
+                  if(index>=1 ){
+                      try{
+                      ++index;
+                      while(index>=musicName.size()){
+                      jList.setSelectedIndex(index);
+                      flag = (String)jList.getSelectedValue();
+                      tt =flag;
+                      url = new URL("file:"+"/Music/"+flag+".mp3");
+                      String s = "/Music/"+flag+".mp3";
+                      File file = new File(s);
+//                      file = new File(url);
+                      MediaLocator locator = new MediaLocator(url);
+                      player = Manager.createPlayer(locator);
+                      player.prefetch();
+                      player.start();
+                      }
+                      }catch(Exception eee){
+                          System.out.println("下一首播放失败！");
+                      }
+                  }
+              }            
+          }
+    }
+    
+    /**
+     * 设置文件选择器选择的类型
+     */
     class myFileFilter extends javax.swing.filechooser.FileFilter{
 		public String getDescription() {
 			return "*.mp3;*.wav";
@@ -347,16 +535,18 @@ public class MainView extends JFrame {
 		}
 	}
     
+    class MusicFileChooser extends JFileChooser {
+    }
+    
+
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JSlider Volume;
     private javax.swing.JButton delete;
     private javax.swing.JButton get;
     private javax.swing.JLabel information;
     private javax.swing.JList<String> jList;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTextPane jT;
     private javax.swing.JLabel jlLeft;
     private javax.swing.JLabel jlRight;
     private javax.swing.JPanel jpList;
@@ -364,6 +554,7 @@ public class MainView extends JFrame {
     private javax.swing.JButton next;
     private javax.swing.JButton pre;
     private javax.swing.JLabel pricture;
+    private javax.swing.JSlider progress;
     private javax.swing.JButton restart;
     private javax.swing.JButton start;
     private javax.swing.JButton stop;
