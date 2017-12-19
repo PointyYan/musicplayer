@@ -83,7 +83,6 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
         information = new javax.swing.JLabel();
         pricture = new javax.swing.JLabel();
         start = new javax.swing.JButton();
-        stop = new javax.swing.JButton();
         next = new javax.swing.JButton();
         volumeOOO = new javax.swing.JToggleButton();
         jsVolume = new javax.swing.JSlider();
@@ -144,9 +143,6 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
         start.setText("开始");
         start.setActionCommand("start");
         start.addActionListener(this);
-
-        stop.setText("暂停");
-        stop.setActionCommand("stop");
 
         next.setText("下一首");
         next.setActionCommand("next");
@@ -297,8 +293,6 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(start, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(stop, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(next)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(volumeOOO)
@@ -332,7 +326,6 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
                         .addComponent(start)
                         .addComponent(restart)
                         .addComponent(pre)
-                        .addComponent(stop)
                         .addComponent(next)
                         .addComponent(volumeOOO)))
                 .addContainerGap())
@@ -421,6 +414,7 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
           String cmd = e.getActionCommand();
           if(e.getSource()==start){
               index = chooseIndex;
+              if(player==null){
               if(index>=0){
                   try {
                       jList.setSelectedIndex(index);
@@ -444,17 +438,19 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
                       player = Manager.createPlayer(locator);
                       player.prefetch();
                       player.start();
+                      start.setText("暂停");
                   }catch(Exception ee){
                       System.out.println("shibai");
                       System.out.println(url);
                   }
               }
-          }
-          if(e.getSource()==stop){
+              }
               if(player!=null){
                   player.stop();
+                  start.setText("开始");
               }
           }
+          
           if(e.getSource()==restart){
               if(player!=null){
                 player.stop();
@@ -557,7 +553,6 @@ public class MainView extends JFrame implements ActionListener, ControllerListen
     private javax.swing.JSlider progress;
     private javax.swing.JButton restart;
     private javax.swing.JButton start;
-    private javax.swing.JButton stop;
     private javax.swing.JToggleButton volumeOOO;
     // End of variables declaration//GEN-END:variables
 }

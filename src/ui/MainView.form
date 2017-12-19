@@ -46,8 +46,6 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="start" min="-2" pref="69" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="stop" min="-2" pref="69" max="-2" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="next" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="32767" attributes="0"/>
                       <Component id="volumeOOO" min="-2" max="-2" attributes="0"/>
@@ -89,7 +87,6 @@
                       <Component id="start" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="restart" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="pre" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="stop" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="next" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="volumeOOO" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
@@ -148,12 +145,6 @@
       <AuxValues>
         <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="start.addActionListener(this);"/>
       </AuxValues>
-    </Component>
-    <Component class="javax.swing.JButton" name="stop">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="&#x6682;&#x505c;"/>
-        <Property name="actionCommand" type="java.lang.String" value="stop"/>
-      </Properties>
     </Component>
     <Component class="javax.swing.JButton" name="next">
       <Properties>
